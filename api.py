@@ -191,20 +191,20 @@ async def get_ticker(symbol: str):
     ticker = exchange.fetch_ticker(symbol)
     
     return {
-        "success": True,
-        "data": {
-            "symbol": ticker['symbol'],
-            "last": ticker['last'],
-            "high": ticker['high'],
-            "low": ticker['low'],
-            "volume": ticker['volume'],
-            "bid": ticker['bid'],
-            "ask": ticker['ask'],
-            "change": ticker['change'],
-            "change_percent": ticker['percentage'],
-            "timestamp": ticker['timestamp']
-        }
+    "success": True,
+    "data": {
+        "symbol": ticker.get('symbol'),
+        "last": ticker.get('last'),
+        "high": ticker.get('high'),
+        "low": ticker.get('low'),
+        "volume": ticker.get('baseVolume') or ticker.get('volume', 0),
+        "bid": ticker.get('bid'),
+        "ask": ticker.get('ask'),
+        "change": ticker.get('change'),
+        "change_percent": ticker.get('percentage'),
+        "timestamp": ticker.get('timestamp')
     }
+}
 
 
 @app.get("/api/orderbook/{symbol}")
