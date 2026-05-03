@@ -1,9 +1,12 @@
 /**
  * OKX API 反向代理 - Vercel Serverless Function
- * 部署后：https://xxx.vercel.app/api/proxy?path=/api/v5/...
+ * 
+ * 支持两种调用方式：
+ * 1. 路径方式：/api/v5/account/balance（推荐）
+ * 2. 参数方式：/api/proxy?path=/api/v5/account/balance（兼容）
  */
 
-const OKX_API_HOST = 'www.okx.com';
+const OKX_API_HOST = 'https://www.okx.com';
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
@@ -14,11 +17,17 @@ export default async function handler(req, res) {
   }
 
   const { path, ...queryParams } = req.query;
-
-  if (!path || !path.startsWith('/api/')) {
+  let targetPath;
+  
+  if (path && path.startsWith('/api/')) {
+    targetPath = path;
+  } else if (req.url.startsWith('/api/v5/')) {
+    const urlObj = new URL(req.url, 'http://localhost');
+    targetPath = urlObj.pathname;
+  } else {
     return res.status(400).json({
       code: '400',
-      msg: 'Missing or invalid path parameter. Use ?path=/api/v5/...'
+      msg: 'Use /api/v5/... or /api/proxy?path=/api/v5/...'
     });
   }
 
@@ -27,7 +36,7 @@ export default async function handler(req, res) {
     .map(([key, value]) => `${key}=${value}`)
     .join('&');
 
-  const targetPath = path + (queryString ? `?${queryString}` : '');
+  if (queryString) targetPath += `?${queryString}`;
 
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Expose-Headers', '*');
@@ -46,7 +55,8 @@ export default async function handler(req, res) {
       fetchOptions.body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
     }
 
-    const targetUrl = `https://${OKX_API_HOST}${targetPath}`;
+    const targetUrl = `${OKX_API_HOST}${targetPath}`;
+    console.log(`[Proxy] ${req.method} ${targetUrl}`);
     const response = await fetch(targetUrl, fetchOptions);
     const responseBody = await response.text();
 
