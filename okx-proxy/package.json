@@ -1,0 +1,5 @@
+{
+  "name": "okx-proxy",
+  "version": "1.0.0",
+  "description": "OKX API Reverse Proxy for Vercel"
+}
